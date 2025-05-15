@@ -25,10 +25,12 @@ The CICD pipeline consists of the following stages:
 
 For the sake of this workflow, it makes sense for it to flow in a linear fashion (non parallel deployments) due one section being QA with a dependancy and one being Production also with a dependancy.
 
+With the pipeline also flowing in a linear fashion, if a single stage were to fail, the entire pipeline would pause. 
+
 
 ### Pipeline monitoring
 
-Codepipeline was also chosen due to it's variety of informative events upon execution. This events could be monitored by 'AWS Eventbridge' i.e:
+Codepipeline was also chosen due to it's variety of informative events upon execution. These events could be monitored by 'AWS Eventbridge' i.e:
 
 {
   "source": ["aws.codepipeline"],
@@ -39,10 +41,18 @@ This data could then be routed to a target such as SNS and/or a Lambda which not
 
 
 
-
 ### Deployment commands
 
+This pipeline is designed so that any commit to the 'main' branch (can also be master) will trigger the initial deployment stage. 
 
+If the pipeline were to be invoked via the CLI, the following command could be executed:
+
+* aws codepipeline start-pipeline-execution --name <pipelineName> 
 
 
 ### Additional changes
+
+No 'build' stage(s) have been included due to no code compiling being required however, the following stages could be included if for example, the above were a java project:
+
+- Build (straight after source) to compile code and output as an artifact into S3.
+- Integration stage after the final deployment stage to run a simple script which could check the endpoint/URL is working.
