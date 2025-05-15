@@ -1,6 +1,6 @@
-#IaC Configuration#
+# IaC Configuration
 
-AWS was chosen as the Cloud platform provider due to it's suitable choices of resources to create a basic web server (apache) to serve content over port 80 consisting of two json templates comprising of VPC & EC2 resources.
+## AWS was chosen as the Cloud platform provider due to it's suitable choices of resources to create a basic web server (apache) to serve content over port 80 consisting of two json templates comprising of VPC & EC2 resources.
 
 *Network setup*
 
