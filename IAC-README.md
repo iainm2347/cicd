@@ -45,7 +45,7 @@ To increase high availability, you could also create an autoscaling group with a
 
 ### Deployment commands
 
-For the purpose of this exercise, the networking & compute infrastructure will be deployed via the CICD pipeline. However to create a stack(s), the following command could be used:
+For the purpose of this exercise, the networking & compute infrastructure will be deployed via the CICD pipeline. However to create a stack(s), the following command (with the correct parameters) could be used:
 
-* aws cloudformation deploy --template-file /path_to_template/template.json --stack-name my-new-stack 
+* aws cloudformation deploy --template-file /path_to_template/template.json --stack-name <stackName> 
 
