@@ -1,0 +1,160 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Template deploys an ec2 instance with cfn-init to initialize apache web server. Also creates network acl for subnet and security group.",
+    "Resources": {
+        "ApacheNACL": {
+            "Type": "AWS::EC2::NetworkAcl",
+            "Properties": {
+                "VpcId": [
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${vpc-setup}-VPCID"
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "HTTPTraffic"
+                    }
+                ]
+            }
+        },
+        "InboundRule": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "DependsOn": "ApacheNACL",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "ApacheNACL"
+                },
+                "RuleNumber": 100,
+                "Protocol": 6,
+                "RuleAction": "allow",
+                "CidrBlock": "10.180.0.0/16",
+                "PortRange": {
+                    "From": 80,
+                    "To": 80
+                }
+            }
+        },
+        "OutboundRule": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "DependsOn": "ApacheNACL",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "ApacheNACL"
+                },
+                "RuleNumber": 100,
+                "Protocol": -1,
+                "Egress": true,
+                "RuleAction": "allow",
+                "CidrBlock": "0.0.0.0/0"
+            }
+        },
+        "SubnetNetworkAclAssociation" : {
+            "Type" : "AWS::EC2::SubnetNetworkAclAssociation",
+            "DependsOn": "ApacheNACL",
+            "Properties" : {
+                "SubnetId": [
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${vpc-setup}-PublicSubnet1"
+                        }
+                    }
+                ],
+                "NetworkAclId" : { "Ref" : "ApacheNACL" },
+            }
+        },
+        "ApacheInstanceSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow http to client host",
+                "VpcId": [
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${vpc-setup}-VPCID"
+                        }
+                    }
+                ],
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "ApacheInstance": {
+            "Type": "AWS::EC2::Instance",
+            "DependsOn": "ApacheInstanceSecurityGroup",
+            "Metadata": {
+                "Comment1": "Bootstrap helpers to install the Apache Web Server and PHP",
+                "Comment2": "Site content exists at /var/www/html/index.php",
+                "AWS::CloudFormation::Init": {
+                    "configSets": {
+                        "Install": [
+                            "Install"
+                        ]
+                    },
+                    "Install": {
+                        "packages": {
+                            "yum": {
+                                "httpd": [],
+                                "php": []
+                            }
+                        },
+                        "files": {
+                            "/var/www/html/index.php": {
+                                "mode": "000600",
+                                "owner": "apache",
+                                "group": "apache"
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "httpd": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "ImageId": "ami-123456789",
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "ApacheInstanceSecurityGroup"
+                            }
+                        ],
+                        "SubnetId": [
+                            {
+                                "Fn::ImportValue": {
+                                    "Fn::Sub": "${vpc-setup}-PublicSubnet1"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "InstanceType": "t3.micro",
+                "UserData": "Base64"
+            },
+            "Fn::Sub": "#!/bin/bash -xe\nyum update -y aws-cfn-bootstrap\n# Install the files and packages from the metadata\n/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ApacheInstance --configsets Install --region ${AWS::Region"
+        }
+    }
+}

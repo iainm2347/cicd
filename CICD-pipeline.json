@@ -1,0 +1,182 @@
+{
+    "pipeline": {
+        "name": "waracle-pipeline",
+        "roleArn": "arn:aws:iam::123456789:role/service-role/AWSCodePipelineServiceRole",
+        "artifactStore": {
+            "type": "s3",
+            "location": "codepipeline-eu-west-1-123456789",
+            "encryptionKey": {
+                "id": "arn:aws:kms:eu-west-1:123456789/waracle-test-key",
+                "type": "KMS"
+            }
+        },
+        "stages": [
+            {
+                "name": "Source",
+                "actions": [
+                    {
+                        "name": "source",
+                        "actionTypeId": {
+                            "category": "Source",
+                            "owner": "AWS",
+                            "provider": "CodeStarSourceConnection",
+                            "version": "1"
+                        },
+                        "runOrder": 1,
+                        "configuration": {
+                            "Branchname": "master",
+                            "ConnectionArn": "arn:aws:codestar-connection...............",
+                            "FullRepositoryId": "waracle/waracle-cicd-test",
+                            "OutputArtifactFormat": "CODE_ZIP"
+                        },
+                        "outputArtifacts": [
+                            {
+                                "name": "SourceArtifact"
+                            }
+                        ],
+                        "inputArtifacts": [],
+                        "region": "eu-west-1",
+                        "namespace": "SourceVariables"
+                    }
+                ]
+            },
+            {
+                "name": "qa-vpc-setup",
+                "actions": [
+                    {
+                        "inputArtifacts": [
+                            {
+                                "name": "waracle-cicd-test"
+                            }
+                        ],
+                        "name": "vpc-setup",
+                        "actionTypeId": {
+                            "category": "Deploy",
+                            "owner": "AWS",
+                            "provider": "Cloudformation",
+                            "version": "1"
+                        },
+                        "outputArtifacts": [],
+                        "configuration": {
+                            "ActionMode": "CHANGE_SET_REPLACE",
+                            "ChangeSetName": "qa-vpc-setup-test",
+                            "RoleArn": "ARN_CFN_Stack.....",
+                            "Capabilities": "CAPABILITY_IAM",
+                            "StackName": "qa-vpc-setup",
+                            "TemplatePath": "waracle-cicd-test::vpc-setup.json"
+                        },
+                        "runOrder": 1
+                    }
+                ]
+            },
+            {
+                "name": "qa-ec2-setup",
+                "actions": [
+                    {
+                        "inputArtifacts": [
+                            {
+                                "name": "waracle-cicd-test"
+                            }
+                        ],
+                        "name": "qa-ec2-setup",
+                        "actionTypeId": {
+                            "category": "Deploy",
+                            "owner": "AWS",
+                            "provider": "Cloudformation",
+                            "version": "1"
+                        },
+                        "outputArtifacts": [],
+                        "configuration": {
+                            "ActionMode": "CHANGE_SET_REPLACE",
+                            "ChangeSetName": "qa-ec2-setup",
+                            "RoleArn": "ARN_CFN_Stack.....",
+                            "Capabilities": "CAPABILITY_IAM",
+                            "StackName": "ec2-setup",
+                            "TemplatePath": "waracle-cicd-test::ec2-setup.json"
+                        },
+                        "runOrder": 1
+                    }
+                ]
+            },
+            {
+                "name": "production-setup-approval",
+                "actions": [
+                    {
+                        "name": "Prod-deployment-approval",
+                        "actionTypeId": {
+                            "category": "Approval",
+                            "owner": "AWS",
+                            "provider": "Manual",
+                            "version": "1"
+                        },
+                        "runOrder": 1,
+                        "configuration": {
+                            "NotificationArn": "arn:aws:sns:eu-west-1:123456789:waracle-sns-approval-topic"
+                        },
+                        "outputArtifacts": [],
+                        "inputArtifacts": [],
+                        "region": "eu-west-1"
+                    }
+                ]
+            },
+            {
+                "name": "vpc-setup",
+                "actions": [
+                    {
+                        "inputArtifacts": [
+                            {
+                                "name": "waracle-cicd-test"
+                            }
+                        ],
+                        "name": "vpc-setup",
+                        "actionTypeId": {
+                            "category": "Deploy",
+                            "owner": "AWS",
+                            "provider": "Cloudformation",
+                            "version": "1"
+                        },
+                        "outputArtifacts": [],
+                        "configuration": {
+                            "ActionMode": "CHANGE_SET_REPLACE",
+                            "ChangeSetName": "vpc-setup-test",
+                            "RoleArn": "ARN_CFN_Stack.....",
+                            "Capabilities": "CAPABILITY_IAM",
+                            "StackName": "vpc-setup",
+                            "TemplatePath": "waracle-cicd-test::vpc-setup.json"
+                        },
+                        "runOrder": 1
+                    }
+                ]
+            },
+            {
+                "name": "ec2-setup",
+                "actions": [
+                    {
+                        "inputArtifacts": [
+                            {
+                                "name": "waracle-cicd-test"
+                            }
+                        ],
+                        "name": "ec2-setup",
+                        "actionTypeId": {
+                            "category": "Deploy",
+                            "owner": "AWS",
+                            "provider": "Cloudformation",
+                            "version": "1"
+                        },
+                        "outputArtifacts": [],
+                        "configuration": {
+                            "ActionMode": "CHANGE_SET_REPLACE",
+                            "ChangeSetName": "ec2-setup-test",
+                            "RoleArn": "ARN_CFN_Stack.....",
+                            "Capabilities": "CAPABILITY_IAM",
+                            "StackName": "ec2-setup",
+                            "TemplatePath": "waracle-cicd-test::ec2-setup.json"
+                        },
+                        "runOrder": 1
+                    }
+                ]
+            }
+        ]
+    }
+}
